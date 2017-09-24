@@ -51,6 +51,35 @@ Note on variables id versus terminal: Hubway-assigned terminal names (see variab
 # 1
 Create a database called hubway\_<lastname> from the data in compsci01:/usr/share/databases/Hubway. Create two appropriately named tables and load the Hubway csv files into the tables. Include any reasonable integrity constraints in your “create table” commands. Please at least include a foreign key constraint. Read the README file!
 
+[brew services start postgresql]
+psql -p5432 -d "username"
+CREATE DATABASE hubway_duffrindecal;
+\connect hubway_duffrindecal
+CREATE TABLE trips (
+  seq_id  integer primary key,
+  hubway_id   bigint,
+  status  character varying(10),
+  duration  integer,
+  start_date  timestamp without time zone,
+  strt_statn  integer,
+  end_date  timestamp without time zone,
+  end_statn   integer,
+  bike_nr   character varying(20),
+  subsc_type  character varying(20),
+  zip_code  character varying(6),
+  birth_date  integer,
+  gender  character varying(10));
+
+CREATE TABLE stations (
+  id  int primary key,
+  terminal   char(6),
+  station  varchar(80),
+  municipal  varchar(20),
+  lat  float,
+  lng float,
+  status  varchar(8));
+
+
 # 2
 Write these queries.
 
