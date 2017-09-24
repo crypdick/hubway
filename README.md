@@ -56,7 +56,7 @@ psql -p5432 -d "username"
 CREATE DATABASE hubway_duffrindecal;
 \connect hubway_duffrindecal
 CREATE TABLE trips (
-  seq_id  integer primary key,
+  seq_id  serial primary key,
   hubway_id   bigint,
   status  character varying(10),
   duration  integer,
@@ -71,23 +71,47 @@ CREATE TABLE trips (
   gender  character varying(10));
 
 CREATE TABLE stations (
-  id  int primary key,
+  id  serial primary key,
   terminal   char(6),
   station  varchar(80),
   municipal  varchar(20),
-  lat  float,
-  lng float,
+  lat  double precision,
+  lng  double precision,
   status  varchar(8));
 
+\copy stations FROM data/hubway_stations.csv  CSV HEADER;
+\copy trips FROM data/hubway_trips.csv  CSV HEADER;
 
 # 2
 Write these queries.
 
 ## a
-Find the first 10 the station names whose status correspond to 'Removed', sorted by station, ascending.
+Find the first 10 station names whose status correspond to 'Removed', sorted by station, ascending.
+
+SELECT * FROM stations WHERE status = 'Removed' ORDER BY station ASC LIMIT 10;
+ id | terminal |                              station                              | municipal |    lat     |     lng     | status  
+----+----------+-------------------------------------------------------------------+-----------+------------+-------------+---------
+ 85 | C32012   | Andrew Station - Dorchester Ave at Humboldt Pl                    | Boston    |  42.330825 |  -71.057007 | Removed
+ 13 | C32002   | Boston Medical Center - 721 Mass. Ave.                            | Boston    |  42.334057 |   -71.07403 | Removed
+ 61 | C32008   | Boylston at Fairfield                                             | Boston    |  42.348323 |  -71.082674 | Removed
+ 82 | K32002   | Brookline Town Hall / Library Washington St                       | Brookline |  42.333689 |  -71.120526 | Removed
+ 60 | D32016   | Charles Circle - Charles St. at Cambridge St.                     | Boston    |  42.360877 |   -71.07131 | Removed
+ 56 | B32017   | Dudley Square                                                     | Boston    | 42.3281898 | -71.0833545 | Removed
+ 97 | M32015   | Harvard  University River Houses at DeWolfe St / Cowperthwaite St | Cambridge |  42.369182 |  -71.117152 | Removed
+ 23 | B32008   | Mayor Thomas M. Menino - Government Center                        | Boston    |  42.359677 |  -71.059364 | Removed
+ 37 | D32001   | New Balance - 38 Guest St.                                        | Boston    |  42.357247 |  -71.146452 | Removed
+ 34 | B32009   | Overland St at Brookline Ave                                      | Boston    |  42.346171 |  -71.099855 | Removed
+(10 rows)
 
 ## b
-Find the first 10 the station names that are located inside the bounding box formed by two given (latitude, longitude) points, sorted by station, ascending.
+Find the first 10 station names that are located inside the bounding box formed by two given (latitude, longitude) points, sorted by station, ascending.
+
+SELECT min(lat) AS min_lat, max(lat) AS max_lat, min(lng) AS min_lng, max(lng) AS max_lng FROM stations;
+  min_lat  | max_lat  |  min_lng   |  max_lng   
+-----------+----------+------------+------------
+ 42.309467 | 42.40449 | -71.146452 | -71.035705
+(1 row)
+
 
 ## c
 Find the first 10 trips' ids (hubway\_id) that started or ended at stations within a bounding boxed formed by two given (latitude, longitude) points, sorted by id, ascending.
