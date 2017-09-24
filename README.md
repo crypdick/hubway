@@ -88,19 +88,19 @@ Write these queries.
 ## a
 Find the first 10 station names whose status correspond to 'Removed', sorted by station, ascending.
 
-SELECT * FROM stations WHERE status = 'Removed' ORDER BY station ASC LIMIT 10;
- id | terminal |                              station                              | municipal |    lat     |     lng     | status  
-----+----------+-------------------------------------------------------------------+-----------+------------+-------------+---------
- 85 | C32012   | Andrew Station - Dorchester Ave at Humboldt Pl                    | Boston    |  42.330825 |  -71.057007 | Removed
- 13 | C32002   | Boston Medical Center - 721 Mass. Ave.                            | Boston    |  42.334057 |   -71.07403 | Removed
- 61 | C32008   | Boylston at Fairfield                                             | Boston    |  42.348323 |  -71.082674 | Removed
- 82 | K32002   | Brookline Town Hall / Library Washington St                       | Brookline |  42.333689 |  -71.120526 | Removed
- 60 | D32016   | Charles Circle - Charles St. at Cambridge St.                     | Boston    |  42.360877 |   -71.07131 | Removed
- 56 | B32017   | Dudley Square                                                     | Boston    | 42.3281898 | -71.0833545 | Removed
- 97 | M32015   | Harvard  University River Houses at DeWolfe St / Cowperthwaite St | Cambridge |  42.369182 |  -71.117152 | Removed
- 23 | B32008   | Mayor Thomas M. Menino - Government Center                        | Boston    |  42.359677 |  -71.059364 | Removed
- 37 | D32001   | New Balance - 38 Guest St.                                        | Boston    |  42.357247 |  -71.146452 | Removed
- 34 | B32009   | Overland St at Brookline Ave                                      | Boston    |  42.346171 |  -71.099855 | Removed
+SELECT station FROM stations WHERE status = 'Removed' ORDER BY station ASC LIMIT 10;
+                              station                              
+-------------------------------------------------------------------
+ Andrew Station - Dorchester Ave at Humboldt Pl
+ Boston Medical Center - 721 Mass. Ave.
+ Boylston at Fairfield
+ Brookline Town Hall / Library Washington St
+ Charles Circle - Charles St. at Cambridge St.
+ Dudley Square
+ Harvard  University River Houses at DeWolfe St / Cowperthwaite St
+ Mayor Thomas M. Menino - Government Center
+ New Balance - 38 Guest St.
+ Overland St at Brookline Ave
 (10 rows)
 
 ## b
@@ -112,13 +112,104 @@ SELECT min(lat) AS min_lat, max(lat) AS max_lat, min(lng) AS min_lng, max(lng) A
  42.309467 | 42.40449 | -71.146452 | -71.035705
 (1 row)
 
+lat = 42.35 42.4
+lng = -71.1 -71.05
+       low    hi
+
+SELECT station FROM stations WHERE lat > 42.35 AND lat < 42.4 AND lng > -71.1 AND lng < -71.05 ORDER BY station ASC LIMIT 10;
+                        station                         
+--------------------------------------------------------
+ Aquarium Station - 200 Atlantic Ave.
+ Beacon St / Mass Ave
+ Biogen Idec - Binney St / Sixth St
+ Boylston St / Berkeley St
+ Boylston St / Washington St
+ Boylston St. at Arlington St.
+ Cambridge St - at Columbia St / Webster Ave
+ Cambridge St. at Joy St.
+ CambridgeSide Galleria - CambridgeSide PL at Land Blvd
+ Charles Circle - Charles St. at Cambridge St.
+(10 rows)
+
+
 
 ## c
 Find the first 10 trips' ids (hubway\_id) that started or ended at stations within a bounding boxed formed by two given (latitude, longitude) points, sorted by id, ascending.
 
+
+CREATE TEMP TABLE stations_in_box AS (SELECT id FROM stations WHERE lat > 42.35 AND lat < 42.4 AND lng > -71.1 AND lng < -71.05);
+
+SELECT hubway_id FROM trips, stations_in_box WHERE id = strt_statn OR id = end_statn LIMIT 10;
+ hubway_id 
+-----------
+         8
+         9
+        10
+        11
+        12
+        13
+        14
+        15
+        16
+        17
+(10 rows)
+
 # 3
 Write another query to find records in the hubway tables with suspect values of zip code or duration. Start by snooping around the database manually to see how data can be bad. Find any other bad data you can.
 Your query will create a table whose first column is called problem, a short description of the problem, and whose other columns are enough to identify the bad record and illustrate the problem with the data. Show five examples of each problem.
+
+Problem records can have invalid zip codes, a duration that doesn't match the time between start and end (while still accounting for daylight savings), and trips that are less than 5 minutes, with an emphasis on 0 minute trips.
+
+All zip codes are suspect, but assumed to be purely uncleaned data from the leading apostraphe.
+
+(zip, length, discrepancy, duration)
+first column - problem (zip not 5 digits, length is negative, length is 0, discrepancy between computed duration and given, duration less than 5 minutes, duration 0, duration negative)
+other columns - zip_code, start_date, end_date, duration, seq_id
+
+CREATE TEMP TABLE problem_trips AS (SELECT 'zip not 5 digits' AS problem, zip_code, start_date, end_date, duration, seq_id FROM trips WHERE length(replace(zip_code, '''', '')) != 5);
+
+     problem      | zip_code |     start_date      |      end_date       | duration | seq_id 
+------------------+----------+---------------------+---------------------+----------+--------
+ zip not 5 digits | 2114     | 2012-03-21 19:19:00 | 2012-03-21 19:31:00 |      723 | 145217
+ zip not 5 digits | 2114     | 2012-03-22 08:31:00 | 2012-03-22 08:43:00 |      738 | 145556
+ zip not 5 digits | 2114     | 2012-03-27 14:22:00 | 2012-03-27 14:37:00 |      888 | 150973
+ zip not 5 digits | 2114     | 2012-03-28 07:54:00 | 2012-03-28 08:05:00 |      622 | 151525
+ zip not 5 digits | 2134     | 2012-03-29 19:27:00 | 2012-03-29 19:39:00 |      749 | 153077
+(5 rows)
+
+
+INSERT INTO problem_trips (SELECT 'recorded duration is negative' AS problem, zip_code, start_date, end_date, duration, seq_id FROM trips WHERE duration < 0);
+
+       problem        | zip_code |     start_date      |      end_date       | duration | seq_id 
+----------------------+----------+---------------------+---------------------+----------+--------
+ duration is negative |          | 2012-11-04 01:49:00 | 2012-11-04 01:01:00 |    -6480 | 634341
+ duration is negative |          | 2012-11-04 01:50:00 | 2012-11-04 01:02:00 |    -6480 | 634342
+ duration is negative |          | 2012-11-04 01:53:00 | 2012-11-04 01:21:00 |    -5520 | 634343
+ duration is negative |          | 2012-11-04 01:53:00 | 2012-11-04 01:21:00 |    -5520 | 634344
+ duration is negative |          | 2012-11-04 01:53:00 | 2012-11-04 01:34:00 |    -4740 | 634345
+(5 rows)
+
+INSERT INTO problem_trips (SELECT 'recorded duration is zero' AS problem, zip_code, start_date, end_date, duration, seq_id FROM trips WHERE duration = 0);
+
+     problem      | zip_code |     start_date      |      end_date       | duration | seq_id 
+------------------+----------+---------------------+---------------------+----------+--------
+ duration is zero | '02139   | 2012-11-03 21:01:00 | 2012-11-03 21:01:00 |        0 | 634131
+ duration is zero | '53207   | 2012-11-03 22:46:00 | 2012-11-03 22:46:00 |        0 | 634215
+ duration is zero | '02143   | 2012-11-04 12:21:00 | 2012-11-04 12:21:00 |        0 | 634957
+ duration is zero | '02446   | 2012-11-04 12:41:00 | 2012-11-04 12:41:00 |        0 | 635018
+ duration is zero | '02446   | 2012-11-04 12:48:00 | 2012-11-04 12:48:00 |        0 | 635038
+(5 rows)
+
+INSERT INTO problem_trips (SELECT 'discrepancy between computed and recorded duration' AS problem, zip_code, start_date, end_date, duration, seq_id FROM trips WHERE abs((extract(epoch FROM end_date - start_date)/60) - (duration / 60)) > 1 AND abs((extract(epoch FROM end_date - start_date)/60) - (duration / 60)) < 59);
+
+                      problem                       | zip_code |     start_date      |      end_date       | duration | seq_id 
+----------------------------------------------------+----------+---------------------+---------------------+----------+--------
+ discrepancy between computed and recorded duration |          | 2011-07-28 16:19:00 | 2011-07-28 17:10:00 |     2951 |    160
+ discrepancy between computed and recorded duration |          | 2011-07-29 02:11:00 | 2011-07-29 02:38:00 |     1511 |    440
+ discrepancy between computed and recorded duration |          | 2011-07-29 13:07:00 | 2011-07-29 13:18:00 |      444 |    617
+ discrepancy between computed and recorded duration |          | 2011-07-30 22:02:00 | 2011-07-30 22:10:00 |      233 |   1716
+ discrepancy between computed and recorded duration |          | 2011-07-31 17:21:00 | 2011-07-31 17:49:00 |     1575 |   2439
+(5 rows)
 
 # 4
 Create a database called fanfiction\_<lastname>. Create a stories\_orig table with url as the primary key. 
