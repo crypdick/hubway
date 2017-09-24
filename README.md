@@ -31,7 +31,8 @@ Note on variables id versus terminal: Hubway-assigned terminal names (see variab
 - status: Existing station locations and ones that have been removed or relocated
 
 ##  1. Creating tables
-[brew services start postgresql]
+
+    [brew services start postgresql]
     psql -p5432 -d "username"
     CREATE DATABASE hubway_duffrindecal;
     \connect hubway_duffrindecal
