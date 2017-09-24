@@ -136,15 +136,22 @@ We chose these boundaries:
     (10 rows)
 
 ## 3. Suspected bad data
-Query to find records in the hubway tables with suspect values of zip code or duration. Created a table whose first column is called problem, a short description of the problem, and whose other columns are enough to identify the bad record and illustrate the problem with the data. Showed five examples of each problem.
+Queries to find records in the hubway tables with suspect values of zip code or durations. Created a table whose first column is called problem, a short description of the problem, and whose other columns are enough to identify the bad record and illustrate the problem with the data. Showed five examples of each problem.
 
-Problem records can have invalid zip codes, a duration that doesn't match the time between start and end (while still accounting for daylight savings), and trips that are less than 5 minutes, with an emphasis on 0 minute trips.
+We identified potentially invalid zip codes, a duration that doesn't match the time between start and end (while still accounting for daylight savings), and trips that are less than 5 minutes, with an emphasis on 0 minute trips.
 
-All zip codes are suspect, but assumed to be purely uncleaned data from the leading apostrophe.
+All zip codes are technically invalid since they all contain a leading apostrophe, which is most likely from the raw scrape. After stripping all the apostrophe's from our data, we found various ones that had less than 5 digits. We labeled all of these as "zip not 5 digits".
 
-(zip, length, discrepancy, duration)
-first column - problem (zip not 5 digits, length is negative, length is 0, discrepancy between computed duration and given, duration less than 5 minutes, duration 0, duration negative)
-other columns - zip_code, start_date, end_date, duration, seq_id
+We also found various issues in the trip duration:
+- durations were negative numbers. Labeled as "duration is negative".
+- trip duration was 0 seconds. Labeled as "duration is zero".
+- discrepancies between recorded duration and duration we computed using the start and end dates. Of these, we found
+    two sub-sets:
+    - discrepancy exactly equal to 1 hour. We found that these were always early on certain mornings every year. Thus,
+      these were due to daylights savings time. We omitted these from the suspected bad data table.
+    - the rest of the discrepancies were between 1 and 59 minutes. These are unexplained, but could be due to some
+      promotion. We labelled these as "discrepancy between computed and recorded duration".
+
 
     CREATE TEMP TABLE problem_trips AS (SELECT 'zip not 5 digits' AS problem, zip_code, start_date, end_date, duration, seq_id FROM trips WHERE length(replace(zip_code, '''', '')) != 5);
     
