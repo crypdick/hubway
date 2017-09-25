@@ -153,48 +153,50 @@ We also found various issues in the trip duration:
     - the rest of the discrepancies were between 1 and 59 minutes. These are unexplained, but could be due to some
       promotion. We labelled these as "discrepancy between computed and recorded duration".
 
-        
-        CREATE TEMP TABLE problem_trips AS (SELECT 'zip not 5 digits' AS problem, zip_code, start_date, end_date, duration, seq_id FROM trips WHERE length(replace(zip_code, '''', '')) != 5);
-        
-             problem      | zip_code |     start_date      |      end_date       | duration | seq_id 
-        ------------------+----------+---------------------+---------------------+----------+--------
-         zip not 5 digits | 2114     | 2012-03-21 19:19:00 | 2012-03-21 19:31:00 |      723 | 145217
-         zip not 5 digits | 2114     | 2012-03-22 08:31:00 | 2012-03-22 08:43:00 |      738 | 145556
-         zip not 5 digits | 2114     | 2012-03-27 14:22:00 | 2012-03-27 14:37:00 |      888 | 150973
-         zip not 5 digits | 2114     | 2012-03-28 07:54:00 | 2012-03-28 08:05:00 |      622 | 151525
-         zip not 5 digits | 2134     | 2012-03-29 19:27:00 | 2012-03-29 19:39:00 |      749 | 153077
-        (5 rows)
-        
-        
-        INSERT INTO problem_trips (SELECT 'recorded duration is negative' AS problem, zip_code, start_date, end_date, duration, seq_id FROM trips WHERE duration < 0);
-        
-               problem        | zip_code |     start_date      |      end_date       | duration | seq_id 
-        ----------------------+----------+---------------------+---------------------+----------+--------
-         duration is negative |          | 2012-11-04 01:49:00 | 2012-11-04 01:01:00 |    -6480 | 634341
-         duration is negative |          | 2012-11-04 01:50:00 | 2012-11-04 01:02:00 |    -6480 | 634342
-         duration is negative |          | 2012-11-04 01:53:00 | 2012-11-04 01:21:00 |    -5520 | 634343
-         duration is negative |          | 2012-11-04 01:53:00 | 2012-11-04 01:21:00 |    -5520 | 634344
-         duration is negative |          | 2012-11-04 01:53:00 | 2012-11-04 01:34:00 |    -4740 | 634345
-        (5 rows)
-        
-        INSERT INTO problem_trips (SELECT 'recorded duration is zero' AS problem, zip_code, start_date, end_date, duration, seq_id FROM trips WHERE duration = 0);
-        
-             problem      | zip_code |     start_date      |      end_date       | duration | seq_id 
-        ------------------+----------+---------------------+---------------------+----------+--------
-         duration is zero | '02139   | 2012-11-03 21:01:00 | 2012-11-03 21:01:00 |        0 | 634131
-         duration is zero | '53207   | 2012-11-03 22:46:00 | 2012-11-03 22:46:00 |        0 | 634215
-         duration is zero | '02143   | 2012-11-04 12:21:00 | 2012-11-04 12:21:00 |        0 | 634957
-         duration is zero | '02446   | 2012-11-04 12:41:00 | 2012-11-04 12:41:00 |        0 | 635018
-         duration is zero | '02446   | 2012-11-04 12:48:00 | 2012-11-04 12:48:00 |        0 | 635038
-        (5 rows)
-        
-        INSERT INTO problem_trips (SELECT 'discrepancy between computed and recorded duration' AS problem, zip_code, start_date, end_date, duration, seq_id FROM trips WHERE abs((extract(epoch FROM end_date - start_date)/60) - (duration / 60)) > 1 AND abs((extract(epoch FROM end_date - start_date)/60) - (duration / 60)) < 59);
-        
-                              problem                       | zip_code |     start_date      |      end_date       | duration | seq_id 
-        ----------------------------------------------------+----------+---------------------+---------------------+----------+--------
-         discrepancy between computed and recorded duration |          | 2011-07-28 16:19:00 | 2011-07-28 17:10:00 |     2951 |    160
-         discrepancy between computed and recorded duration |          | 2011-07-29 02:11:00 | 2011-07-29 02:38:00 |     1511 |    440
-         discrepancy between computed and recorded duration |          | 2011-07-29 13:07:00 | 2011-07-29 13:18:00 |      444 |    617
-         discrepancy between computed and recorded duration |          | 2011-07-30 22:02:00 | 2011-07-30 22:10:00 |      233 |   1716
-         discrepancy between computed and recorded duration |          | 2011-07-31 17:21:00 | 2011-07-31 17:49:00 |     1575 |   2439
-        (5 rows)
+ 
+```
+    CREATE TEMP TABLE problem_trips AS (SELECT 'zip not 5 digits' AS problem, zip_code, start_date, end_date, duration, seq_id FROM trips WHERE length(replace(zip_code, '''', '')) != 5);
+    
+         problem      | zip_code |     start_date      |      end_date       | duration | seq_id 
+    ------------------+----------+---------------------+---------------------+----------+--------
+     zip not 5 digits | 2114     | 2012-03-21 19:19:00 | 2012-03-21 19:31:00 |      723 | 145217
+     zip not 5 digits | 2114     | 2012-03-22 08:31:00 | 2012-03-22 08:43:00 |      738 | 145556
+     zip not 5 digits | 2114     | 2012-03-27 14:22:00 | 2012-03-27 14:37:00 |      888 | 150973
+     zip not 5 digits | 2114     | 2012-03-28 07:54:00 | 2012-03-28 08:05:00 |      622 | 151525
+     zip not 5 digits | 2134     | 2012-03-29 19:27:00 | 2012-03-29 19:39:00 |      749 | 153077
+    (5 rows)
+    
+    
+    INSERT INTO problem_trips (SELECT 'recorded duration is negative' AS problem, zip_code, start_date, end_date, duration, seq_id FROM trips WHERE duration < 0);
+    
+           problem        | zip_code |     start_date      |      end_date       | duration | seq_id 
+    ----------------------+----------+---------------------+---------------------+----------+--------
+     duration is negative |          | 2012-11-04 01:49:00 | 2012-11-04 01:01:00 |    -6480 | 634341
+     duration is negative |          | 2012-11-04 01:50:00 | 2012-11-04 01:02:00 |    -6480 | 634342
+     duration is negative |          | 2012-11-04 01:53:00 | 2012-11-04 01:21:00 |    -5520 | 634343
+     duration is negative |          | 2012-11-04 01:53:00 | 2012-11-04 01:21:00 |    -5520 | 634344
+     duration is negative |          | 2012-11-04 01:53:00 | 2012-11-04 01:34:00 |    -4740 | 634345
+    (5 rows)
+    
+    INSERT INTO problem_trips (SELECT 'recorded duration is zero' AS problem, zip_code, start_date, end_date, duration, seq_id FROM trips WHERE duration = 0);
+    
+         problem      | zip_code |     start_date      |      end_date       | duration | seq_id 
+    ------------------+----------+---------------------+---------------------+----------+--------
+     duration is zero | '02139   | 2012-11-03 21:01:00 | 2012-11-03 21:01:00 |        0 | 634131
+     duration is zero | '53207   | 2012-11-03 22:46:00 | 2012-11-03 22:46:00 |        0 | 634215
+     duration is zero | '02143   | 2012-11-04 12:21:00 | 2012-11-04 12:21:00 |        0 | 634957
+     duration is zero | '02446   | 2012-11-04 12:41:00 | 2012-11-04 12:41:00 |        0 | 635018
+     duration is zero | '02446   | 2012-11-04 12:48:00 | 2012-11-04 12:48:00 |        0 | 635038
+    (5 rows)
+    
+    INSERT INTO problem_trips (SELECT 'discrepancy between computed and recorded duration' AS problem, zip_code, start_date, end_date, duration, seq_id FROM trips WHERE abs((extract(epoch FROM end_date - start_date)/60) - (duration / 60)) > 1 AND abs((extract(epoch FROM end_date - start_date)/60) - (duration / 60)) < 59);
+    
+                          problem                       | zip_code |     start_date      |      end_date       | duration | seq_id 
+    ----------------------------------------------------+----------+---------------------+---------------------+----------+--------
+     discrepancy between computed and recorded duration |          | 2011-07-28 16:19:00 | 2011-07-28 17:10:00 |     2951 |    160
+     discrepancy between computed and recorded duration |          | 2011-07-29 02:11:00 | 2011-07-29 02:38:00 |     1511 |    440
+     discrepancy between computed and recorded duration |          | 2011-07-29 13:07:00 | 2011-07-29 13:18:00 |      444 |    617
+     discrepancy between computed and recorded duration |          | 2011-07-30 22:02:00 | 2011-07-30 22:10:00 |      233 |   1716
+     discrepancy between computed and recorded duration |          | 2011-07-31 17:21:00 | 2011-07-31 17:49:00 |     1575 |   2439
+    (5 rows)
+```
